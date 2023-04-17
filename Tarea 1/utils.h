@@ -15,9 +15,6 @@
 #include <string>
 #include <sstream>
 
-#define FIFO1 "fifo1"
-#define FIFO2 "fifo2"
-
 using namespace std;
 
 struct message {

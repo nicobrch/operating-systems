@@ -9,10 +9,10 @@ int main() {
     string auxMsj;
 
     // Abrir pipes
-    fd1 = open(FIFO1, O_WRONLY);
-    fd2 = open(FIFO2, O_RDONLY);
+    fd1 = open("fifo0", O_WRONLY);
+    fd2 = open("fifo1", O_RDONLY);
 
-    mutex = sem_open("mutex", O_CREAT, 0666, 1);
+    mutex = sem_open("mutex0", O_CREAT, 0666, 1);
 
     //  Enviar mensaje a la PIPE1
     enviarMensaje(fd1, pid, mutex, msg, "Jugador se ha conectado");
