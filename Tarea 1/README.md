@@ -7,14 +7,14 @@
 
 ### Ejecución
 
-- Compilar ambos archivos .cpp con g++.
+- Compilar los archivos
 
 ```shell
 g++ mesa.cpp -o mesa
 g++ jugador.cpp -o jugador
 ```
 
-- Ejecutar mesa en una terminal e indicar cuántos N jugadores habrán.
+- Ejecutar mesa en una terminal e indicar cuántos N jugadores habrán (Espere hasta que aparezca el mensaje: "Esperando jugadores...").
 
 ```shell
 ./mesa
@@ -24,4 +24,7 @@ g++ jugador.cpp -o jugador
 
 ```shell
 ./jugador
+./jugador2
+./jugador3
+./jugadorN
 ```
