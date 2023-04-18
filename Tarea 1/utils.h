@@ -19,7 +19,7 @@ using namespace std;
 
 struct message {
     int process_id;
-    char data[256];
+    char data[512];
 };
 
 int genRandom(int minimo, int maximo){
@@ -38,7 +38,7 @@ int charArrayToInt(message msg){
     return result;
 }
 
-void enviarMensaje(int fd, int pid, sem_t *mutex, message msg, string mensaje){
+void enviarMensaje(int fd, int pid, sem_t *mutex, message msg, const string& mensaje){
     //  Asociar atributos al struct message
     msg.process_id = pid;
     strcpy(msg.data, mensaje.c_str());
@@ -92,6 +92,9 @@ public:
         this->puntaje = genRandom(3, 21);
     }
     int getPuntaje() const { return this->puntaje; }
+    void nuevoPuntaje(){
+        this->puntaje = genRandom(3, 21);
+    }
 };
 
 class Jugador {
@@ -100,6 +103,10 @@ private:
     int monto;
     vector<int> cartas;
 public:
+    Jugador(){
+        this->id = 0;
+        this->monto = 0;
+    }
     Jugador(int id, int mnt){
         this->id = id;
         this->monto = mnt;
@@ -112,8 +119,8 @@ public:
     unsigned long getCantidadCartas() const { return this->cartas.size(); }
     int getSumaCartas() {
         int suma = 0;
-        for (int i=0; i<cartas.size(); i++){
-            suma += cartas[i];
+        for (int carta : cartas){
+            suma += carta;
         }
         return suma;
     }
@@ -123,6 +130,9 @@ public:
     void agregarCarta(){
         this->cartas.push_back(genRandom(1, 10));
     }
+    void setId(int ide){
+        this->id = ide;
+    }
     string imprimirCartas(){
         string auxMsj = "Sus cartas son: ";
         for (int i=0; i<getCantidadCartas(); i++){
@@ -131,7 +141,17 @@ public:
                 auxMsj += " - ";
             }
         }
-        auxMsj += "\nDigite 1 si desea obtener una carta más, 0 si desea apostar con las que ya posee.";
+        auxMsj += "\nIngrese:\n- 1 Para una obtener una nueva carta.\n- 2 Para apostar con las cartas que tiene"
+                  "\n- 9 Si se desea retirar.";
         return auxMsj;
+    }
+    void resetCartas(){
+        cartas.clear();
+        cartas.shrink_to_fit();
+    }
+    void nuevoJuego(){
+        resetCartas();
+        agregarCarta();
+        agregarCarta();
     }
 };
