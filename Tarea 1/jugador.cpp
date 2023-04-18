@@ -14,21 +14,22 @@ int main() {
 
     mutex = sem_open("mutex0", O_CREAT, 0666, 1);
 
-    //  Enviar mensaje a la PIPE1
+    //  Enviar mensaje a la PIPE1 'Jugador conectado'
     enviarMensaje(fd1, pid, mutex, msg, "Jugador se ha conectado");
 
-    //  Leer mensaje desde la PIPE2
+    //  Leer mensaje desde la PIPE2 'Cuanto dinero desea apostar'
     msg = leerMensaje(fd2, mutex, msg);
 
-    //  Enviar mensaje CIN a la PIPE1
+    //  Enviar mensaje CIN a la PIPE1 'Cantidad a apostar'
     enviarMensajeCIN(fd1, pid, mutex, msg);
 
-    //  Leer mensaje desde la PIPE 2
+    //  Leer mensaje desde la PIPE 2 'Cartas obtenidas'
     msg = leerMensaje(fd2, mutex, msg);
 
-    //  Enviar mensaje CIN a la PIPE 1
+    //  Enviar mensaje CIN a la PIPE 1 'Ingresar 1 para mas cartas o 0 para jugar'
     enviarMensajeCIN(fd1, pid, mutex, msg);
 
+    //  Resultado de la última opción
     leerMensaje(fd2, mutex, msg);
 
     close(fd1);
