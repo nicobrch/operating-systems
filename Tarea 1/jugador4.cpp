@@ -45,5 +45,5 @@ int main() {
     close(fd2);
     sem_close(mutex);
 
-    return 0;
+    exit(0);
 }
