@@ -149,12 +149,26 @@ int main() {
         }
     }
 
+    cout << "Se han desconectado todos los jugadores.\nTerminando el programa..." << endl;
+
     // Cerrar las pipes y los semaforos
     for (i=0; i<cantidadJugadores; i++)
     {
         close(fd1[i]);
         close(fd2[i]);
         sem_close(mutex[i]);
+    }
+
+    //  Borrar archivos creados
+    for (i=0; i < (cantidadJugadores*2); i++)
+    {
+        string path = "fifo" + to_string(i);
+        unlink(path.c_str());
+    }
+    for (i=0; i<cantidadJugadores; i++)
+    {
+        string path = "mutex" + to_string(i);
+        sem_unlink(path.c_str());
     }
 
     return 0;
