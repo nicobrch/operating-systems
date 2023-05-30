@@ -2,40 +2,57 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <random>
 
 using namespace std;
 
+struct Objeto
+{
+    int peso;
+    int ganancia;
+};
+
+int generarRandom(int minimo, int maximo)
+{
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<> distr(minimo, maximo);
+    return distr(gen);
+}
+
+void leerArchivo(const string& nombreArchivo, vector<Objeto>& objetos)
+{
+    ifstream archivo(nombreArchivo);
+    if (!archivo)
+    {
+        cerr << "No se pudo abrir el archivo" << endl;
+        return;
+    }
+    string linea;
+    while (getline(archivo, linea))
+    {
+        istringstream iss(linea);
+        int peso, ganancia;
+        Objeto obj;
+        if (iss >> peso >> ganancia) {
+            obj.peso = peso;
+            obj.ganancia = ganancia;
+            objetos.push_back(obj);
+        }
+    }
+    archivo.close();
+}
+
+
+void agregarItems(vector<Objeto>& objetos)
+{
+    
+}
+
 int main() {
-    //  -- Rubrica --   //  -- Id 1 --  //
-    string filename = "mochila.txt";
-    ifstream file(filename);
-    if (!file.is_open()) {
-        cout << "Couldn't open file" << endl;
-        return 1;
-    }
-
-    int N = 0;
-    string line;
-    while (getline(file, line)) {
-        ++N;    // contar filas para array
-    }
-
-    int column1_values[N];
-    int column2_values[N];
-    file.clear();
-    file.seekg(0, ios::beg);    // empezar desde el principio
-
-    int i = 0, ganancia = 0;
-    while (getline(file, line)) {
-        stringstream ss(line);
-        int val1, val2;
-        ss >> val1 >> val2;
-        column1_values[i] = val1;
-        column2_values[i] = val2;
-        if (val1>ganancia) ganancia = val1; // registro ganancia
-        i++;
-    }
-
-    file.close();
+    vector<Objeto> objetos;
+    string nombreArchivo = "mochila.txt";
+    leerArchivo(nombreArchivo, objetos);
+    
     return 0;
 }
