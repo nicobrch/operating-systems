@@ -41,6 +41,7 @@ int generarRandom(int minimo, int maximo)
 
 void leerArchivo(const string& nombreArchivo, vector<Objeto>& objetos, int& mejorGanancia)
 {
+    // Rubrica ID 1
     ifstream archivo(nombreArchivo);
     if (!archivo)
     {
@@ -70,17 +71,21 @@ void agregarObjetos(vector<Objeto>& objetos, Mochila& mochila, int K)
     clock_t ciclosEsperados = K * CLOCKS_PER_SEC;
     auto it = objetos.begin();
 
+    // Rubrica ID 3
     while (clock() - inicio < ciclosEsperados)
     {
+        // Rubrica ID 2
         numeroObjetos = objetos.size() - 1;
         int rand = generarRandom(1, numeroObjetos);
         Objeto objetoRandom = objetos.at(rand);
         objetos.erase(it + rand);
+        // Rubrica ID 3
         if (objetoRandom.ganancia > mochila.mejorGanancia)
         {
             cout << "La mejor ganancia es: " << objetoRandom.ganancia << endl;
             mochila.mejorGanancia = objetoRandom.ganancia;
         }
+        // Rubrica ID 2
         if (mochila.pesoActual + objetoRandom.peso > mochila.pesoMaximo)
         {
             cout << "Se paso del peso maximo, su peso actual es: " <<
@@ -95,12 +100,14 @@ void agregarObjetos(vector<Objeto>& objetos, Mochila& mochila, int K)
     cout << "+ Su mejor ganancia es: " << mochila.mejorGanancia << " y su peso: " << mochila.pesoActual << endl;
 }
 
+// Rubrica ID 5
 void agregarObjetosSincronizado(vector<Objeto>& objetos, Mochila& mochila, int K)
 {
     clock_t inicio = clock();
     clock_t ciclosEsperados = K * CLOCKS_PER_SEC;
     auto it = objetos.begin();
 
+    // Rubrica ID 6
     while (clock() - inicio < ciclosEsperados)
     {
         numeroObjetos = objetos.size() - 1;
@@ -113,6 +120,7 @@ void agregarObjetosSincronizado(vector<Objeto>& objetos, Mochila& mochila, int K
 
         sem_post(&semaforo);
 
+        // Rubrica ID 6
         if (objetoRandom.ganancia > mochila.mejorGanancia)
         {
             lock_guard<mutex> lock(mtx);
@@ -138,7 +146,7 @@ void agregarObjetosSincronizado(vector<Objeto>& objetos, Mochila& mochila, int K
 
 int main() {
     vector<Objeto> objetos;
-    int mejorGanancia = 0;
+    int mejorGanancia = 0, N, K;
     string nombreArchivo = "mochila.txt";
     leerArchivo(nombreArchivo, objetos, mejorGanancia);
     pesoMaximo = objetos.front().peso;
@@ -148,11 +156,35 @@ int main() {
     Mochila mochila;
     agregarObjetos(objetos, mochila, 1);
 
+    // Rubrica ID 6
     cout << "--- Agregar Objetos con Threads ---" << endl;
-    int N = 2;  // Numero de threads
+    cout << "> Ingrese un numero N de threads" << endl;
+    cin >> N;
+    cout << "> Ingrese una cantidad K entera de segundos" << endl;
+    cin >> K;
     vector<Mochila> mochilas(N);
     sem_init(&semaforo, 0, 1);
     vector<thread> threads(N);
+
+    // Rubrica ID 4
+    for (int i=0; i<N; i++){
+        threads[i] = thread(agregarObjetosSincronizado, ref(objetos), ref(mochilas[i]), K);
+    }
+    for (auto &th : threads){   
+        th.join();
+    }
+
+    sem_destroy(&semaforo);
+
+    // Rubrica ID 7
+    cout << "--- Agregar Objetos con 4 a la vez ---" << endl;
+    cout << "> Ingrese un numero N de threads" << endl;
+    cin >> N;
+    cout << "> Ingrese una cantidad K entera de segundos" << endl;
+    cin >> K;
+    vector<Mochila> mochilasCuatro(N);
+    sem_init(&semaforo, 0, 1);
+    vector<thread> threadsCuatro(N);
 
     for (int i=0; i<N; i++){
         threads[i] = thread(agregarObjetosSincronizado, ref(objetos), ref(mochilas[i]), 3);
@@ -161,7 +193,7 @@ int main() {
         th.join();
     }
 
-    
+    sem_destroy(&semaforo);
 
     return 0;
 }
