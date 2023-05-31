@@ -7,8 +7,12 @@
 #include <mutex>
 #include <semaphore.h>
 #include <thread>
+#include <vector>
 
 using namespace std;
+
+int pesoMaximo;
+int numeroObjetos;
 
 struct Objeto
 {
@@ -18,16 +22,14 @@ struct Objeto
 
 struct Mochila
 {
-    int pesoMaximo = 0;
+    int pesoMaximo = 5000;
     int pesoActual = 0;
     int mejorGanancia = 0;
     vector<Objeto> objetos;
 };
 
 mutex mtx;
-sem_t sem;
-int numeroObjetos = 200;
-int pesoMaximo = 5000;
+sem_t semaforo;
 
 int generarRandom(int minimo, int maximo)
 {
@@ -70,6 +72,7 @@ void agregarObjetos(vector<Objeto>& objetos, Mochila& mochila, int K)
 
     while (clock() - inicio < ciclosEsperados)
     {
+        numeroObjetos = objetos.size() - 1;
         int rand = generarRandom(1, numeroObjetos);
         Objeto objetoRandom = objetos.at(rand);
         objetos.erase(it + rand);
@@ -98,28 +101,39 @@ void agregarObjetosSincronizado(vector<Objeto>& objetos, Mochila& mochila, int K
     clock_t ciclosEsperados = K * CLOCKS_PER_SEC;
     auto it = objetos.begin();
 
-    while (clock() - inicio < ciclosEsperados) {
+    while (clock() - inicio < ciclosEsperados)
+    {
+        numeroObjetos = objetos.size() - 1;
         int rand = generarRandom(1, numeroObjetos);
-        sem_wait(&sem); // Esperar a que el semáforo esté disponible
-        mtx.lock(); // Bloquear el acceso al vector de objetos
+
+        sem_wait(&semaforo);
+
         Objeto objetoRandom = objetos.at(rand);
         objetos.erase(it + rand);
-        mtx.unlock(); // Desbloquear el acceso al vector de objetos
-        sem_post(&sem); // Liberar el semáforo
 
-        if (objetoRandom.ganancia > mochila.mejorGanancia) {
+        sem_post(&semaforo);
+
+        if (objetoRandom.ganancia > mochila.mejorGanancia)
+        {
+            lock_guard<mutex> lock(mtx);
             cout << "La mejor ganancia es: " << objetoRandom.ganancia << endl;
             mochila.mejorGanancia = objetoRandom.ganancia;
         }
-        if (mochila.pesoActual + objetoRandom.peso > mochila.pesoMaximo) {
-            cout << "Se paso del peso maximo" << endl;
+        if (mochila.pesoActual + objetoRandom.peso > mochila.pesoMaximo)
+        {
+            lock_guard<mutex> lock(mtx);
+            cout << "Se paso del peso maximo, su peso actual es: " <<
+            mochila.pesoActual << "\ny si se le suma el objeto de peso: " <<
+            objetoRandom.peso << "\nse pasa del maximo que es: " << mochila.pesoMaximo << endl;
             break;
         }
-
+        lock_guard<mutex> lock(mtx);
         mochila.objetos.push_back(objetoRandom);
         mochila.pesoActual += objetoRandom.peso;
     }
+
     cout << "+ Su mejor ganancia es: " << mochila.mejorGanancia << " y su peso: " << mochila.pesoActual << endl;
+    cout << "------" << endl;
 }
 
 int main() {
@@ -127,29 +141,27 @@ int main() {
     int mejorGanancia = 0;
     string nombreArchivo = "mochila.txt";
     leerArchivo(nombreArchivo, objetos, mejorGanancia);
+    pesoMaximo = objetos.front().peso;
+    numeroObjetos = objetos.front().ganancia - 1;
 
     cout << "--- Agregar Objetos ---" << endl;
     Mochila mochila;
     agregarObjetos(objetos, mochila, 1);
 
-    const int NThreads = 5;
-    vector<thread> threads(NThreads);
-    vector<Mochila> mochilasThreads;
-    sem_init(&sem, 0, 1);
-    cout << "--- Agregar Objetos Sincronizados ---" << endl;
-    for (int i = 0; i < NThreads; ++i) {
-        cout << "<< Thread " << i << " >>" << endl;
-        threads.at(i) = thread([&objetos, &mochilasThreads, i]() {
-            agregarObjetosSincronizado(objetos, mochilasThreads[i], 3);
-        });
+    cout << "--- Agregar Objetos con Threads ---" << endl;
+    int N = 2;  // Numero de threads
+    vector<Mochila> mochilas(N);
+    sem_init(&semaforo, 0, 1);
+    vector<thread> threads(N);
+
+    for (int i=0; i<N; i++){
+        threads[i] = thread(agregarObjetosSincronizado, ref(objetos), ref(mochilas[i]), 3);
     }
-    for (int i = 0; i < NThreads; ++i) {
-        threads[i].join(); // Espera a que todos los threads terminen
+    for (auto &th : threads){
+        th.join();
     }
-    sem_destroy(&sem);
-    for (int i = 0; i < NThreads; ++i) {
-        cout << "Mochila " << i + 1 << " - Mejor ganancia: " << mochilasThreads.at(i).mejorGanancia << std::endl;
-    }
+
+    
 
     return 0;
 }
