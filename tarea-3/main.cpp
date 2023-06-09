@@ -40,6 +40,21 @@ bool gestionarPermisos(const string& path, string permisos) {
     }
 }
 
+void listarArchivos(const string& path) {
+    DIR* directorio = opendir(path.c_str());
+    if (directorio) {
+        struct dirent* archivo;
+        while ((archivo = readdir(directorio)) != nullptr) {
+            string nombreArchivo = archivo->d_name;
+            cout << nombreArchivo << endl;
+        }
+
+        closedir(directorio);
+    } else {
+        cout << "Error: No se pudo abrir el directorio." << endl;
+    }
+}
+
 void listarInodos(const string& path) {
     DIR* directorio = opendir(path.c_str());
     if (directorio) {
@@ -158,6 +173,23 @@ bool mover(const string& sourcePath, const string& destinationPath) {
     return rename(sourcePath.c_str(), destinationPath.c_str()) == 0;
 }
 
+void help() {
+    cout << "\033[1mComandos disponibles:\033[0m" << endl;
+    cout << "\033[1m- touch <nombre_archivo>\033[0m: crea un nuevo archivo." << endl;
+    cout << "\033[1m- mkdir <nombre_directorio>\033[0m: crea un nuevo directorio." << endl;
+    cout << "\033[1m- chmod <ruta> <permisos>\033[0m: cambia los permisos de un archivo o directorio." << endl;
+    cout << "\033[1m- ls\033[0m: lista los archivos y directorios en el directorio actual." << endl;
+    cout << "\033[1m- ls -i\033[0m: lista los archivos y directorios con sus respectivos i-nodos en el directorio actual." << endl;
+    cout << "\033[1m- ls -R\033[0m: lista de forma recursiva los archivos y directorios en el directorio actual y sus subdirectorios." << endl;
+    cout << "\033[1m- cd <ruta>\033[0m: cambia el directorio actual." << endl;
+    cout << "\033[1m- rm <ruta>\033[0m: elimina un archivo." << endl;
+    cout << "\033[1m- rm-r <ruta>\033[0m: elimina un directorio y su contenido de forma recursiva." << endl;
+    cout << "\033[1m- mv <ruta_origen> <ruta_destino>\033[0m: mueve un archivo o directorio a una nueva ubicación." << endl;
+    cout << "\033[1m- print\033[0m: imprime el árbol de archivos y directorios." << endl;
+    cout << "\033[1m- help\033[0m: lista de comandos y sus funciones." << endl;
+    cout << "\033[1m- exit\033[0m: sale del programa." << endl;
+}
+
 struct FileNode {
     string name;
     string id;
@@ -177,7 +209,7 @@ public:
         crearArbol(directorioActual, root);
     }
 
-    void crearArbol(const string& rutaDirectorio, FileNode& parentNode) {
+    void crearArbol(const string& rutaDirectorio, FileNode& nodoPadre) {
         DIR* directorio = opendir(rutaDirectorio.c_str());
         if (directorio) {
             struct dirent* archivo;
@@ -198,7 +230,7 @@ public:
                             crearArbol(rutaArchivo, nodoArchivo);
                         }
 
-                        parentNode.children.push_back(nodoArchivo);
+                        nodoPadre.children.push_back(nodoArchivo);
                     }
                 }
             }
@@ -229,7 +261,7 @@ public:
     }
 
     void imprimirNodo(const FileNode& node, int level) {
-        cout << string(level * 2, ' ') << "- " << node.name << " (ID: " << node.id << ", Size: " << node.size << " bytes, Permissions: " << node.permissions << ")" << endl;
+        cout << string(level * 2, ' ') << "- " << node.name << " (ID: " << node.id << ", Size: " << node.size << " bytes, Permisos: " << node.permissions << ")" << endl;
 
         for (const FileNode& child : node.children) {
             imprimirNodo(child, level + 1);
@@ -249,6 +281,8 @@ int main() {
         if (entrada == "exit") {
             cout << "Saliendo del programa." << endl;
             break;
+        } else if (entrada == "help") {
+            help();
         } else if (entrada == "print") {
             arbol.imprimirArbol();
         } else if (entrada.substr(0, 6) == "touch ") {
@@ -259,8 +293,8 @@ int main() {
             string nombreDirectorio = entrada.substr(6);
             cout << "Creando directorio: " << nombreDirectorio << endl;
             crearDirectorio(nombreDirectorio);
-        } else if (entrada.substr(0, 7) == "chmod ") {
-            string path = entrada.substr(7);
+        } else if (entrada.substr(0, 6) == "chmod ") {
+            string path = entrada.substr(6);
             string permisos;
             cout << "Ingrese los permisos (por ejemplo: rwxr-xr-x): ";
             getline(cin, permisos);
@@ -268,7 +302,7 @@ int main() {
             gestionarPermisos(path, permisos);
         } else if (entrada == "ls") {
             cout << "Listando archivos y directorios:" << endl;
-            listarInodos(rutaActual);
+            listarArchivos(rutaActual);
         } else if (entrada == "ls -i") {
             cout << "Listando archivos y directorios con i-nodos:" << endl;
             listarInodos(rutaActual);
@@ -283,7 +317,7 @@ int main() {
             string path = entrada.substr(3);
             cout << "Eliminando archivo: " << path << endl;
             borrarArchivo(path);
-        } else if (entrada.substr(0, 5) == "rm -r ") {
+        } else if (entrada.substr(0, 5) == "rm-r ") {
             string path = entrada.substr(5);
             cout << "Eliminando directorio recursivamente: " << path << endl;
             borrarDirectorio(path);
