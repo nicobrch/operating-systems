@@ -3,6 +3,8 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <cstring>
+#include <unistd.h>
+#include <limits.h>
 
 using namespace std;
 
@@ -82,6 +84,39 @@ void listarRecursivo(const string& path) {
     } else {
         cout << "Error: No se pudo abrir el directorio." << endl;
     }
+}
+
+string obtenerRutaActual() {
+    char path[PATH_MAX];
+    if (getcwd(path, sizeof(path)) != nullptr) {
+        return string(path);
+    } else {
+        cerr << "Error: No se pudo obtener la ruta actual." << endl;
+        return "";
+    }
+}
+
+bool cambiarDirectorio(const string& path) {
+    if (path == "~") {
+        const char* directorioHome = getenv("HOME");
+        if (directorioHome != nullptr) {
+            return chdir(directorioHome) == 0;
+        }
+    } else if (path == "..") {
+        string directorioActual = obtenerRutaActual();
+        size_t slashPrevio = directorioActual.rfind('/');
+        if (slashPrevio != string::npos) {
+            string directorioPadre = directorioActual.substr(0, slashPrevio);
+            return chdir(directorioPadre.c_str()) == 0;
+        }
+    } else {
+        struct stat inodo;
+        if (stat(path.c_str(), &inodo) == 0 && S_ISDIR(inodo.st_mode)) {
+            return chdir(path.c_str()) == 0;
+        }
+    }
+
+    return false;
 }
 
 int main(){
